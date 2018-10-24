@@ -4,15 +4,25 @@ using UnityEngine;
 
 public class TankCamera : MonoBehaviour
 {
+    //相机目标
     public GameObject Target;
-    public Camera[] Cameras;
-
+    //与目标距离
     public float Distance = 5;
-
+    //位置偏差
     public Vector3 offest = new Vector3(-0.62f, 11.42f, -93.9f);
-
+    //阻尼
     public float Damping = 0.5f;
+    
+    #region 视野缩放
+    private float scrollSpeed = 1f;
 
+    void ScrollView()
+    {
+        Distance -= Input.GetAxis("Mouse ScrollWheel") * scrollSpeed;
+    }
+    #endregion
+
+    //计算相机位置
     void UpdateCamera()
     {
         if (!Target)
@@ -27,9 +37,13 @@ public class TankCamera : MonoBehaviour
 
     private void LateUpdate()
     {
+        //Roate();
+        ScrollView();
         UpdateCamera();
+        
     }
 
+    //获取相机目标
     private void Update()
     {
         if(Target == null)

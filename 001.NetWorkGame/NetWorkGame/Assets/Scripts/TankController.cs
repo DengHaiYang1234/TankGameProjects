@@ -24,7 +24,14 @@ public class TankController : MonoBehaviour
     {
         Vector2 moveVector = new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical"));
         targetTank.Move(moveVector);
+
+        Vector2 aimVector = new Vector2(Input.GetAxis("Mouse X"), Input.GetAxis("Mouse Y"));
+        targetTank.Aim(aimVector);
+
+        //targetTank.WheelUpdate();
     }
 
-    
+
+
+
 }
