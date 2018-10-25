@@ -25,115 +25,14 @@ public class Tank : MonoBehaviour
     public float FlipRatio = 0.7f;
     private float rotationX = 0;
 
-
-    #region 履带与车轮
-    //履带
-    private Transform tracks;
-    //轮子
+    public float WheelRotateSpeed = 50f;
     private Transform wheels;
-    //轮轴
-    public List<AxleInfo> axleInfos;
-    //马力
-    private float motor;
-    //最大马力
-    private float maxMotorTorque;
-    //制动
-    private float brakeTorque;
-    //最大制动
-    private float maxBrakeTorque;
-    //转向角
-    private float steering;
-    //最大转向角
-    public float maxSteeringAngle;
+    private TankTrackAnimation tracks;
 
-    //private void WheelCtrl()
-    //{
-    //    motor = maxMotorTorque * Input.GetAxis("Vertical");
-    //    steering = maxSteeringAngle * Input.GetAxis("Horizontal");
-
-    //    brakeTorque = 0;
-    //    foreach(AxleInfo axleInfo in axleInfos)
-    //    {
-    //        if (axleInfo.leftWheel.rpm > 5 && motor < 0)
-    //        {
-    //            brakeTorque = maxBrakeTorque;
-    //        }
-    //        else if (axleInfo.leftWheel.rpm < -5 && motor > 0)
-    //            brakeTorque = maxBrakeTorque;
-    //        continue;
-    //    }
-    //}
-
-    //public void WheelUpdate()
-    //{
-    //    WheelCtrl();
-
-    //    foreach(AxleInfo axleInfo in axleInfos)
-    //    {
-    //        if(axleInfo.steering)
-    //        {
-    //            axleInfo.leftWheel.steerAngle = steering;
-    //            axleInfo.rightWheel.steerAngle = steering;
-    //        }
-
-    //        if(axleInfo.motor)
-    //        {
-    //            axleInfo.leftWheel.motorTorque = motor;
-    //            axleInfo.rightWheel.motorTorque = motor;
-    //        }
-
-    //        if(true)
-    //        {
-    //            axleInfo.leftWheel.brakeTorque = brakeTorque;
-    //            axleInfo.rightWheel.brakeTorque = brakeTorque;
-    //        }
-
-    //        if(axleInfos[1] != null && axleInfo == axleInfos[1])
-    //        {
-    //            WheelsRotation(axleInfos[1].leftWheel);
-    //            TrackMove();
-    //        }
-
-            
-            
-    //    }
-
-    //}
-
-    //public void TrackMove()
-    //{
-    //    if (tracks == null)
-    //        return;
-
-    //    float offset = 0;
-    //    if(wheels.GetChild(0) != null)
-    //    {
-    //        offset = wheels.GetChild(0).localEulerAngles.x / 90f;
-    //    }
-
-    //    foreach(Transform track in tracks)
-    //    {
-    //        MeshRenderer mr = tracks.gameObject.GetComponent<MeshRenderer>();
-    //        if (mr == null) continue;
-    //        Material mtl = mr.material;
-    //        mtl.mainTextureOffset = new Vector2(0, offset);
-    //    }
-    //}
-
-    //public void WheelsRotation(WheelCollider collider)
-    //{
-    //    if (wheels == null)
-    //        return;
-    //    Vector3 position;
-    //    Quaternion rotation;
-    //    collider.GetWorldPose(out position, out rotation);
-
-    //    foreach (Transform wheel in wheels)
-    //    {
-    //        wheels.rotation = rotation;
-    //    }
-    //}
-    #endregion
+    private void Awake()
+    {
+        tracks = GetComponentInChildren<TankTrackAnimation>();
+    }
 
     private void Start()
     {
@@ -145,7 +44,7 @@ public class Tank : MonoBehaviour
         if (MainGun != null)
             mainGunEulerAngle = MainGun.transform.localEulerAngles;
 
-        tracks = transform.Find("track");
+        
         wheels = transform.Find("wheels");
     }
 
@@ -154,6 +53,9 @@ public class Tank : MonoBehaviour
         positionTemp = this.transform.position;
         this.transform.Rotate(new Vector3(0, moveVector.x * TurnSpeed * Time.deltaTime, 0));
         this.transform.position += this.transform.forward * moveVector.y * TankSpeed * Time.deltaTime;
+        //履带滚动
+        if (tracks)
+            tracks.MoveTrack(new Vector2(Mathf.Clamp(moveVector.y + moveVector.x, -1, 1), 0));
     }
 
     public void Aim(Vector2 aimVector)
@@ -180,6 +82,14 @@ public class Tank : MonoBehaviour
                     (MainGunBaseAxis.y * -rotationX) + mainGunEulerAngle.y,
                     (MainGunBaseAxis.z * -rotationX) + mainGunEulerAngle.z
                     );
+        }
+    }
+
+    public void WheelsRotate(Vector2 moveVector)
+    {
+        foreach (Transform wheel in wheels)
+        {
+            wheel.Rotate(moveVector.y * WheelRotateSpeed * Time.deltaTime, 0,0);
         }
     }
 }
