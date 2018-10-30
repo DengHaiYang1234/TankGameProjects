@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class Tank : MonoBehaviour
 {
@@ -33,11 +34,8 @@ public class Tank : MonoBehaviour
     private Vector3 mainGunEulerAngle;
     private Vector3 positionTemp;
 
-    //public float FlipRatio = 0.7f;
     private float rotationX = 0;
 
-    //public float WheelRotateSpeed = 50f;
-    //private Transform wheels;
     //履带
     private TankTrackAnimation tracks;
 
@@ -54,8 +52,19 @@ public class Tank : MonoBehaviour
 
     public Texture2D centerSight;
     public Texture2D tankSight;
+    public Texture2D killUI;
+    private float killUIStartTime = float.MinValue;
 
+    [HeaderAttribute("准心偏差X")]
+    public float offestX = 0f;
+    [HeaderAttribute("准心偏差Y")]
+    public float offestY = 0f;
     public ControllType cType = ControllType.player;
+    [HeaderAttribute("血量UI")]
+    public GameObject HPObj;
+
+    private Text hpTxt;
+
 
     public enum ControllType
     {
@@ -78,8 +87,8 @@ public class Tank : MonoBehaviour
 
         if (MainGun != null)
             mainGunEulerAngle = MainGun.transform.localEulerAngles;
-
-        
+        hpTxt = HPObj.GetComponent<Text>();
+        hpTxt.text = HP.ToString();
         //wheels = transform.Find("wheels");
     }
 
@@ -131,12 +140,18 @@ public class Tank : MonoBehaviour
             return;
 
         Vector3 pos = Muzzle.transform.position + Muzzle.transform.forward * 5;
-        Instantiate(bullet, pos, Muzzle.transform.rotation);
+
+        GameObject bulletObj = (GameObject) Instantiate(bullet, pos, Muzzle.transform.rotation);
+
+        Bullet bulletCmp = bulletObj.GetComponent<Bullet>();
+        if (bulletCmp != null)
+            bulletCmp.attackTank = this.gameObject;
+
         lastShootTime = Time.time;
     }
 
     //坦克受到攻击
-    public void BeAttacked(float att)
+    public void BeAttacked(float att,GameObject attackTank)
     {
         if (HP <= 0)
             return;
@@ -144,66 +159,42 @@ public class Tank : MonoBehaviour
         if (HP > 0)
             HP -= att;
 
+        hpTxt.text = HP.ToString();
+
         if (HP <= 0)
         {
             GameObject destoryObj = (GameObject) Instantiate(fireEffect);
             destoryObj.transform.SetParent(transform, false);
             destoryObj.transform.localPosition = Vector3.zero;
             cType = ControllType.none;
+
+            if (attackTank != null)
+            {
+                Tank tankCmp = attackTank.GetComponent<Tank>();
+                if (tankCmp != null && tankCmp.cType == ControllType.player)
+                    tankCmp.StartDrawKill();
+            }
         }
     }
 
-    public void TargetSignPos()
-    {
-        Vector3 hitpoint = Vector3.zero;
-        RaycastHit rayCastHit;
-        Vector3 centerVec = new Vector3(Screen.width/2, Screen.height/2, 0);
-        Ray ray = Camera.main.ScreenPointToRay(centerVec);
 
-        if (Physics.Raycast(ray, out rayCastHit, 400f))
-        {
-            hitpoint = rayCastHit.point;
-        }
-        else
-        {
-            hitpoint = ray.GetPoint(400);
-        }
-
-        Vector3 dir = hitpoint - Turret.transform.position;
-        Quaternion angle = Quaternion.LookRotation(dir);
-
-
-        Transform targetCube = GameObject.Find("Cube").transform;
-        targetCube.position = hitpoint;
-    }
 
     public Vector3 CalExploadePoint()
     {
         Vector3 hitpoint = Vector3.zero;
         RaycastHit rayCastHit;
-        Vector3 pos = MainGun.transform.position + MainGun.transform.forward*5;
-        //Vector3 centerVec = new Vector3(Screen.width / 2, Screen.height / 2, 0);
-        //Ray ray = Camera.main.ScreenPointToRay(centerVec);
+        Vector3 pos = Muzzle.transform.position + Muzzle.transform.forward * 5;
 
-        Ray ray = new Ray(pos, MainGun.transform.forward);
+        Ray ray = new Ray(pos, Muzzle.transform.forward);
 
-
-
-        if (Physics.Raycast(ray, out rayCastHit, 400f))
+        if (Physics.Raycast(ray, out rayCastHit, 1000f))
         {
             hitpoint = rayCastHit.point;
         }
         else
         {
-            hitpoint = ray.GetPoint(400);
+            hitpoint = ray.GetPoint(1000f);
         }
-
-        Vector3 dir = hitpoint - Turret.transform.position;
-        Quaternion angle = Quaternion.LookRotation(dir);
-
-
-        //Transform targetCube = GameObject.Find("Cube").transform;
-        //targetCube.position = hitpoint;
 
         return hitpoint;
     }
@@ -217,12 +208,30 @@ public class Tank : MonoBehaviour
             tankSight.width, tankSight.height
             );
 
+
         GUI.DrawTexture(tankRect, tankSight);
 
-        Rect centerRect = new Rect(Screen.width/2 - centerSight.width/2, Screen.height/2 - centerSight.height/2,
+        Rect centerRect = new Rect((Screen.width / 2) - (centerSight.width / 2) + offestX, (Screen.height / 2) - (centerSight.height / 2) + offestY,
             centerSight.width, centerSight.height);
 
+
         GUI.DrawTexture(centerRect, centerSight);
+    }
+
+
+    public void StartDrawKill()
+    {
+        killUIStartTime = Time.time;
+    }
+
+    private void DrawKillUI()
+    {
+        if (Time.time - killUIStartTime < 1f)
+        {
+            Rect rect = new Rect(Screen.width/2 - killUI.width/2, 30, killUI.width, killUI.height);
+
+            GUI.DrawTexture(rect, killUI);
+        }
     }
 
 

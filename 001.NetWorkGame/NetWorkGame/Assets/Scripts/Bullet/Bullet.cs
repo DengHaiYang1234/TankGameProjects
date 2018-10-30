@@ -10,6 +10,8 @@ public class Bullet : MonoBehaviour
     public float instaniateTime = 0f;
     public float att = 30f;
 
+    public GameObject attackTank;
+
     private void Start()
     {
         instaniateTime = Time.time;
@@ -26,6 +28,9 @@ public class Bullet : MonoBehaviour
 
     private void OnCollisionEnter(Collision collision)
     {
+        if (collision.gameObject == attackTank)
+            return;
+
         Instantiate(explode, transform.position, transform.rotation);
         Destroy(gameObject);
 
@@ -33,7 +38,7 @@ public class Bullet : MonoBehaviour
         if (tank != null)
         {
             float att = GetAtt();
-            tank.BeAttacked(att);
+            tank.BeAttacked(att,attackTank);
         }
 
     }
@@ -41,7 +46,8 @@ public class Bullet : MonoBehaviour
 
     private float GetAtt()
     {
-        float at = 100 - (Time.time - instaniateTime)*40;
+        float att = 100 - (Time.time - instaniateTime)*40;
+        Debug.LogError("attack:" + att);
         if (att < 1)
             att = 1;
 
